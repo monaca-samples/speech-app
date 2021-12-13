@@ -1,0 +1,81 @@
+<template>
+    <div class="page" data-name="home">
+        <!-- Top Navbar -->
+        <div class="navbar">
+            <div class="navbar-bg"></div>
+            <div class="navbar-inner">
+                <div class="title sliding">音声読み上げ</div>
+            </div>
+        </div>
+
+        <!-- Scrollable page content-->
+        <div class="page-content">
+            <div class="list">
+                <form id="login">
+                    <ul>
+                        <li>
+                            <a href="#" class="item-link smart-select" id="smart-voice">
+                                <select name="voices">
+                                </select>
+                                <div class="item-content"> 
+                                    <div class="item-inner">
+                                        <div class="item-title">音声</div>
+                                        <div class="item-after"></div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </form>
+            </div>
+             <div class="block block-strong">
+                 <textarea name="text" rows="4" cols="40" placeholder="読み上げる文章を入力してください"></textarea>
+             </div>
+             <div class="block">
+                <button @click=${say} class="button button-large button-fill">読み上げる</button>
+            </div>
+        </div>
+    </div>
+</template>
+<script>
+    export default (props, {$f7}) => {
+        const synth = window.speechSynthesis;
+        let voices;
+        
+        // APIの利用可否を判定
+        if (synth) {
+            // ボイスが利用できるよう状態まで2秒ほど待機
+            setTimeout(() => {
+                voices = synth.getVoices();
+                const html = voices.map((voice, index) => {
+                    return `<option value="${voice.voiceURI}">${voice.name} (${voice.lang})</option>`
+                }).join('');
+
+                // selectタグに音声一覧を適用する
+                $f7.$el.find('select[name="voices"]').html(html);
+
+                // 日本語の音声を初期値にする
+                const jaVoice = voices.filter(v => v.lang == 'ja-JP')[0].name;
+                $('.item-after').text(jaVoice);
+            }, 1000 * 2);
+        } else { // SpeechSynthesis APIが使えない場合
+            alert('音声読み上げ非対応です');
+        }
+
+        const say = () => {
+                // 入力されているテキストを取得
+                const text = $f7.$el.find('[name="text"]').val();
+                // 指定されているボイスを取得
+                const select = $f7.$el.find('[name="voices"]').val();
+                // 読み上げオブジェクトへの変換
+                const utterThis = new SpeechSynthesisUtterance(text);
+                // 音声を設定（なければデフォルトの音声）
+                utterThis.voice = voices.filter(v => v.name === select)[0];
+                // 読み上げ
+                synth.speak(utterThis);
+            }
+
+        // コンポーネント関数はレンダリング関数を返さなければならない
+        return $render;
+    }
+</script>
